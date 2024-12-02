@@ -4,7 +4,7 @@ import time
 # verbose = True
 # verboseprint = print if verbose else lambda *a, **k: None
 
-controller = ElevatorController(1, 0, 5)
+controller = ElevatorController(2, 0, 5)
 
 controller.run()
 controller.add_requests([5, 1])
