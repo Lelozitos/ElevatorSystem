@@ -42,11 +42,11 @@ class Elevator():
 
     def move_to_floor(self, floor: int) -> None:
         self.direction = 1 if floor > self.floor else -1 if floor < self.floor else 0
+        verboseprint(f"[Elevator {self.id:<2}] Heading to floor {floor}")
 
         while self.floor != floor:
             self.next_floor()
 
-        verboseprint(f"[Elevator {self.id:<2}] Heading to floor {floor}")
         # Stop at the floor
         self.direction = 0
         self.open_door()
