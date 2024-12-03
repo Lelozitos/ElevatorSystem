@@ -7,17 +7,10 @@ class ElevatorController():
         if n_elevators < 1: raise ValueError("Invalid number of elevators")
         self.elevators = []
         for i in range(n_elevators): self.elevators.append(Elevator(i, floor_min, floor_max))
+        self.threads = []
         # self.run()
 
     def add_request(self, request: Request) -> None: # TODO In theory you can't request same floor twice, make sure of that
-        chosen = self.chose_optimal_elevator(request)
-        chosen.add_request(request.floor)
-
-    def add_requests(self, floors: list) -> None:
-        for floor in floors:
-            self.add_request(Request(floor))
-
-    def chose_optimal_elevator(self, request: Request) -> Elevator:
         target_floor = request.floor
         direction = request.direction
 
@@ -45,8 +38,23 @@ class ElevatorController():
         else:
             raise Exception("No elevators available")
 
-        return chosen
+
+        if chosen in opposite_direction:
+            chosen.add_request_last(target_floor)
+        else:
+            chosen.add_request(target_floor)
+
+    def add_requests(self, floors: list) -> None:
+        for floor in floors:
+            self.add_request(Request(floor))
 
     def run(self) -> None:
         for elevator in self.elevators:
             Thread(target=elevator.execute_requests, daemon=True).start()
+
+    def shutdown(self):
+        for elevator in self.elevators:
+            elevator.is_operational = False
+            elevator.direction = 0
+        for thread in self.threads:
+            thread.join()

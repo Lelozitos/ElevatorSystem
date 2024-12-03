@@ -1,7 +1,8 @@
 from threading import Lock, Condition
 from time import sleep
+# from demo import verboseprint
 
-verboseprint = print # TODO make a decent verboseprint
+verboseprint = print
 
 class Elevator():
     def __init__(self, id: int, floor_min: int, floor_max: int, floor: int = 0):
@@ -16,11 +17,11 @@ class Elevator():
         self.condition = Condition(self.lock)
     
     def open_door(self) -> None:
-        verboseprint(f"Elevator {self.id:<2} -> Door opened on floor {self.floor}")
+        verboseprint(f"[Elevator {self.id:<2}] Door opened on floor {self.floor}")
         sleep(1)
 
     def close_door(self) -> None:
-        verboseprint(f"Elevator {self.id:<2} -> Door closed on floor {self.floor}")
+        verboseprint(f"[Elevator {self.id:<2}] Door closed on floor {self.floor}")
         sleep(1)
 
     def next_floor(self) -> None:
@@ -39,13 +40,13 @@ class Elevator():
             case _:
                 raise Exception("Direction is not set. Elevator is stationary")
 
-    def move_to_floor(self, target_floor: int) -> None:
-        verboseprint(f"Elevator {self.id:<2} -> Heading to floor {target_floor}")
-        self.direction = 1 if target_floor > self.floor else -1 if target_floor < self.floor else 0
+    def move_to_floor(self, floor: int) -> None:
+        self.direction = 1 if floor > self.floor else -1 if floor < self.floor else 0
 
-        while self.floor != target_floor:
+        while self.floor != floor:
             self.next_floor()
 
+        verboseprint(f"[Elevator {self.id:<2}] Heading to floor {floor}")
         # Stop at the floor
         self.direction = 0
         self.open_door()
@@ -54,21 +55,33 @@ class Elevator():
     def add_request(self, floor: int) -> None:
         if floor < self.floor_min or floor > self.floor_max: raise ValueError(f"Requested floor {floor} is out of range")
         with self.condition:
-            verboseprint(f"Elevator {self.id:<2} -> Request added for floor {floor}")
+            if len(self.request_list) > 0:
+                for i in range(len(self.request_list)):
+                    if self.request_list[i] > floor:
+                        self.request_list.insert(i, floor)
+                        break
+            else: self.request_list.append(floor)
+
+            verboseprint(f"[Elevator {self.id:<2}] Request added for floor {floor}  {self.request_list}")
+            self.condition.notify()
+    
+    def add_request_last(self, floor: int) -> None:
+        if floor < self.floor_min or floor > self.floor_max: raise ValueError(f"Requested floor {floor} is out of range")
+        with self.condition:
             self.request_list.append(floor)
-            self.request_list.sort() # TODO works for now, but if someone calls the elevator down while it's going up, better to not stop at floor rn, only when backing
+            verboseprint(f"[Elevator {self.id:<2}] Request added for floor {floor}")
             self.condition.notify()
 
     def execute_requests(self) -> None:
         while True:
             with self.condition:
                 while not self.request_list:
-                    verboseprint(f"Elevator {self.id:<2} -> Waiting for requests...")
+                    verboseprint(f"[Elevator {self.id:<2}] Waiting for requests...")
                     self.condition.wait()
 
-                target_floor = self.request_list.pop(0)
+                floor = self.request_list.pop(0)
 
-            self.move_to_floor(target_floor)
+            self.move_to_floor(floor)
 
     def raise_not_operational(self) -> None:
         if not self.is_operational: raise Exception("Not operational")
