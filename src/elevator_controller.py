@@ -3,13 +3,21 @@ from request import Request
 from elevator import Elevator
 
 class ElevatorController():
-    def __init__(self, n_elevators: int, floor_min: int, floor_max: max) -> None:
+    def __init__(self, n_elevators: int, floor_min: int, floor_max: max):
         if n_elevators < 1: raise ValueError("Invalid number of elevators")
         self.elevators = []
         for i in range(n_elevators): self.elevators.append(Elevator(i, floor_min, floor_max))
         # self.run()
 
-    def add_request(self, request: Request):
+    def add_request(self, request: Request) -> None: # TODO In theory you can't request same floor twice, make sure of that
+        chosen = self.chose_optimal_elevator(request)
+        chosen.add_request(request.floor)
+
+    def add_requests(self, floors: list) -> None:
+        for floor in floors:
+            self.add_request(Request(floor))
+
+    def chose_optimal_elevator(self, request: Request) -> Elevator:
         target_floor = request.floor
         direction = request.direction
 
@@ -37,12 +45,8 @@ class ElevatorController():
         else:
             raise Exception("No elevators available")
 
-        chosen.add_request(target_floor)
+        return chosen
 
-    def add_requests(self, floors: list):
-        for floor in floors:
-            self.add_request(Request(floor))
-
-    def run(self):
+    def run(self) -> None:
         for elevator in self.elevators:
             Thread(target=elevator.execute_requests, daemon=True).start()

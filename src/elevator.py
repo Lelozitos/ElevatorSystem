@@ -59,7 +59,7 @@ class Elevator():
             self.request_list.sort() # TODO works for now, but if someone calls the elevator down while it's going up, better to not stop at floor rn, only when backing
             self.condition.notify()
 
-    def execute_requests(self) -> None: # TODO what if elevator is called in a between floor while heading towards another floor?
+    def execute_requests(self) -> None:
         while True:
             with self.condition:
                 while not self.request_list:
